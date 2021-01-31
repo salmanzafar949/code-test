@@ -21,12 +21,18 @@ class BookingController extends Controller
     protected $repository;
 
     /**
+     * @var authenticatedUser
+     */
+    protected $__authenticatedUser;
+
+    /**
      * BookingController constructor.
      * @param BookingRepository $bookingRepository
      */
     public function __construct(BookingRepository $bookingRepository)
     {
         $this->repository = $bookingRepository;
+        $this->__authenticatedUser = request('__authenticatedUser');
     }
 
     /**
@@ -35,14 +41,25 @@ class BookingController extends Controller
      */
     public function index(Request $request)
     {
-        if($user_id = $request->get('user_id')) {
+        /**
+         * $user_id is not defined
+         * so this wont work
+         * if it's defined then instead of '=' it should '=='
+        */
+        $user_id = 1;
 
-            $response = $this->repository->getUsersJobs($user_id);
-
-        }
-        elseif($request->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID'))
+        if($user_id == $request->get('user_id'))
         {
-            $response = $this->repository->getAll($request);
+            $response = $this
+                ->repository
+                ->getUsersJobs($user_id);
+        }
+
+        if($this->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID'))
+        {
+            $response = $this
+                ->repository
+                ->getAll($request);
         }
 
         return response($response);
@@ -65,9 +82,12 @@ class BookingController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
-
-        $response = $this->repository->store($request->__authenticatedUser, $data);
+        $response = $this
+            ->repository
+            ->store(
+                $this->__authenticatedUser,
+                $request->all()
+            );
 
         return response($response);
 
@@ -80,9 +100,11 @@ class BookingController extends Controller
      */
     public function update($id, Request $request)
     {
-        $data = $request->all();
-        $cuser = $request->__authenticatedUser;
-        $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
+        $response = $this
+            ->repository
+            ->updateJob($id,
+                $request->except(['_token', 'submit']),
+                $this->__authenticatedUser);
 
         return response($response);
     }
@@ -93,10 +115,9 @@ class BookingController extends Controller
      */
     public function immediateJobEmail(Request $request)
     {
-        $adminSenderEmail = config('app.adminemail');
-        $data = $request->all();
-
-        $response = $this->repository->storeJobEmail($data);
+        $response = $this
+            ->repository
+            ->storeJobEmail($request->all());
 
         return response($response);
     }
@@ -107,13 +128,21 @@ class BookingController extends Controller
      */
     public function getHistory(Request $request)
     {
-        if($user_id = $request->get('user_id')) {
+        /**
+         * $user_id is not defined
+         * so this wont work
+         * if it's defined then instead of '=' it should '=='
+         */
+        $user_id = 1;
 
-            $response = $this->repository->getUsersJobsHistory($user_id, $request);
-            return response($response);
-        }
-
-        return null;
+        return $user_id == $request->get('user_id')
+            ?
+            response(
+                $this
+                    ->repository
+                    ->getUsersJobsHistory($user_id, $request)
+            )
+            : null;
     }
 
     /**
@@ -122,20 +151,24 @@ class BookingController extends Controller
      */
     public function acceptJob(Request $request)
     {
-        $data = $request->all();
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->acceptJob($data, $user);
+        $response = $this
+            ->repository
+            ->acceptJob(
+                $request->all(),
+                $this->__authenticatedUser
+            );
 
         return response($response);
     }
 
     public function acceptJobWithId(Request $request)
     {
-        $data = $request->get('job_id');
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->acceptJobWithId($data, $user);
+        $response = $this
+            ->repository
+            ->acceptJobWithId(
+                $request->get('job_id'),
+                $this->__authenticatedUser
+            );
 
         return response($response);
     }
@@ -146,10 +179,12 @@ class BookingController extends Controller
      */
     public function cancelJob(Request $request)
     {
-        $data = $request->all();
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->cancelJobAjax($data, $user);
+        $response = $this
+            ->repository
+            ->cancelJobAjax(
+                $request->all(),
+                $this->__authenticatedUser
+            );
 
         return response($response);
     }
@@ -160,9 +195,9 @@ class BookingController extends Controller
      */
     public function endJob(Request $request)
     {
-        $data = $request->all();
-
-        $response = $this->repository->endJob($data);
+        $response = $this
+            ->repository
+            ->endJob($request->all());
 
         return response($response);
 
@@ -170,9 +205,9 @@ class BookingController extends Controller
 
     public function customerNotCall(Request $request)
     {
-        $data = $request->all();
-
-        $response = $this->repository->customerNotCall($data);
+        $response = $this
+            ->repository
+            ->customerNotCall($request->all());
 
         return response($response);
 
@@ -184,18 +219,21 @@ class BookingController extends Controller
      */
     public function getPotentialJobs(Request $request)
     {
-        $data = $request->all();
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->getPotentialJobs($user);
+        $response = $this
+            ->repository
+            ->getPotentialJobs($this->__authenticatedUser);
 
         return response($response);
     }
 
     public function distanceFeed(Request $request)
     {
-        $data = $request->all();
+        return $this->handleDistanceFeed($request->all());
 
+    }
+
+    protected function handleDistanceFeed($data)
+    {
         if (isset($data['distance']) && $data['distance'] != "") {
             $distance = $data['distance'];
         } else {
@@ -222,7 +260,7 @@ class BookingController extends Controller
         } else {
             $flagged = 'no';
         }
-        
+
         if ($data['manually_handled'] == 'true') {
             $manually_handled = 'yes';
         } else {
@@ -248,7 +286,6 @@ class BookingController extends Controller
         if ($admincomment || $session || $flagged || $manually_handled || $by_admin) {
 
             $affectedRows1 = Job::where('id', '=', $jobid)->update(array('admin_comments' => $admincomment, 'flagged' => $flagged, 'session_time' => $session, 'manually_handled' => $manually_handled, 'by_admin' => $by_admin));
-
         }
 
         return response('Record updated!');
@@ -256,18 +293,21 @@ class BookingController extends Controller
 
     public function reopen(Request $request)
     {
-        $data = $request->all();
-        $response = $this->repository->reopen($data);
+        $response = $this
+            ->repository
+            ->reopen($request->all());
 
         return response($response);
     }
 
     public function resendNotifications(Request $request)
     {
-        $data = $request->all();
-        $job = $this->repository->find($data['jobid']);
+        $job = $this->repository->find($request->jobid);
         $job_data = $this->repository->jobToData($job);
-        $this->repository->sendNotificationTranslator($job, $job_data, '*');
+
+        $this
+            ->repository
+            ->sendNotificationTranslator($job, $job_data, '*');
 
         return response(['success' => 'Push sent']);
     }
@@ -279,9 +319,10 @@ class BookingController extends Controller
      */
     public function resendSMSNotifications(Request $request)
     {
-        $data = $request->all();
-        $job = $this->repository->find($data['jobid']);
-        $job_data = $this->repository->jobToData($job);
+        $job = $this->repository->find($request->jobid);
+        $this
+            ->repository
+            ->jobToData($job);
 
         try {
             $this->repository->sendSMSNotificationToTranslator($job);
@@ -290,5 +331,4 @@ class BookingController extends Controller
             return response(['success' => $e->getMessage()]);
         }
     }
-
 }
