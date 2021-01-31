@@ -9,20 +9,35 @@
 ##### Changes in ```app/Http/Controllers/BookingController.php```
 
 1 - Modified `index` Method
+
 2 - Modified `store` Method
+
 3 - Modified `update` Method
+
 4 - Modified `immediateJobEmail` Method
+
 5 - Modified `getHistory` Method
+
 6 - Modified `acceptJob` Method
+
 7 - Modified `acceptJobWithId` Method
+
 8 - Modified `cancelJob` Method
+
 9 - Modified `endJob` Method
+
 10 - Modified `customerNotCall` Method
+
 11 - Modified `getPotentialJobs` Method
+
 12 - Modified `distanceFeed` Method
+
 13 - Added `handleDistanceFeed` Method
+
 14 - Modified `reopen` Method
+
 15 - Modified `resendNotifications` Method
+
 16 - Modified `resendSMSNotifications` Method
 
 ##### created Global Variable ``$__authenticatedUser`` and saved the authenticated user in the constructor since it is used in entire controller so better to get it in the constructor
